@@ -44,6 +44,33 @@
 //! # Ok::<(), vdf_serde::Error>(())
 //! ```
 //!
+//! # Example I Needed When I Wrote This Library
+//!
+//! If you've got a pile of arbitrary key-value data you can't predict the structure of
+//! in advance, you can use a `HashMap<K, V>`. But if there's a top-level name attached,
+//! you'll need a newtype, like this:
+//!
+//! ```
+//! use std::collections::HashMap;
+//! use serde::Deserialize;
+//! #[derive(Deserialize)]
+//! struct LibraryFolders(HashMap<String, String>);
+//!
+//! let vdf_data = r#""LibraryFolders"
+//! {
+//!     "TimeNextStatsReport"   "69420691337"
+//!     "ContentStatsID"        "31337131269420"
+//!     "1"                     "D:\\SteamLibrary"
+//! }"#;
+//! let LibraryFolders(data) = vdf_serde::from_str(vdf_data)?;
+//! let expected = [("TimeNextStatsReport", "69420691337"), ("ContentStatsID", "31337131269420"), ("1", r"D:\SteamLibrary")]
+//!     .iter()
+//!     .map(|(a, b)| (a.to_string(), b.to_string()))
+//!     .collect::<HashMap<_, _>>();
+//! assert_eq!(data, expected);
+//! # Ok::<(), vdf_serde::Error>(())
+//! ```
+//!
 //! # Notes
 //!
 //! The VDF format is rather drastically underspecified, so until I figure out a way to implement them in a way that's compatible with

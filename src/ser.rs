@@ -149,12 +149,15 @@ impl<'a> ser::Serializer for &'a mut Serializer {
 
     fn serialize_newtype_struct<T>(
         self,
-        _name: &'static str,
+        name: &'static str,
         value: &T,
     ) -> Result<()>
         where
             T: ?Sized + Serialize,
     {
+        if self.indent_level == 0 {
+            self.output += &format!("\"{}\"\t", name);
+        }
         value.serialize(self)
     }
 

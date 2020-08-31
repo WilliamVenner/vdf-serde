@@ -32,7 +32,7 @@ impl<'de> Deserializer<'de> {
 ///
 /// # Errors
 ///
-/// If `s` is not syntactically valid VDF, or `T` uses an unsupported Serde data type,
+/// If `s` is not valid VDF, or `T` uses an unsupported Serde data type,
 /// or `T`'s `Deserialize` implementation itself returns an error, an error will be
 /// returned.
 pub fn from_str<'a, T>(s: &'a str) -> Result<T> where T: Deserialize<'a> {
@@ -178,7 +178,15 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         Err(Error::UnsupportedType("unit_struct"))
     }
 
-    fn deserialize_newtype_struct<V: Visitor<'de>>(self, _name: &'static str, visitor: V) -> Result<V::Value> {
+    fn deserialize_newtype_struct<V: Visitor<'de>>(self, name: &'static str, visitor: V) -> Result<V::Value> {
+        if self.top_level {
+            let name_token = self.next_token()?;
+            match name_token {
+                Token::Item(name_token) if name_token == name => {},
+                got => return Err(Error::Expected(name, format!("{:?}", got))),
+            }
+            self.top_level = false;
+        }
         visitor.visit_newtype_struct(self)
     }
 
