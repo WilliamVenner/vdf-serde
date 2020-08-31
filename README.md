@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-vdf-serde = "0.2.0"
+vdf-serde = "0.3.0"
 ```
 
 ### Simple Example
