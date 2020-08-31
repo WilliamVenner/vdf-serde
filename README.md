@@ -1,5 +1,10 @@
 # vdf-serde
 
+[![builds.sr.ht status](https://builds.sr.ht/~boringcactus/vdf-serde.svg)](https://builds.sr.ht/~boringcactus/vdf-serde?)
+[![Crates.io version](https://img.shields.io/crates/v/vdf-serde)](https://crates.io/crates/vdf-serde)
+[![Crates.io downloads](https://img.shields.io/crates/d/vdf-serde)](https://crates.io/crates/vdf-serde)
+![Crates.io license](https://img.shields.io/crates/l/vdf-serde)
+
 Support for the [Valve Data Format](https://developer.valvesoftware.com/wiki/KeyValues) for [Serde](https://serde.rs/).
 
 Based on the [steamy-vdf](https://crates.io/crates/steamy-vdf) VDF parser library.
