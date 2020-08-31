@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-vdf-serde = "0.1.0"
+vdf-serde = "0.2.0"
 ```
 
 ### Simple Example
@@ -129,6 +129,10 @@ for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
 
 ## History
+
+v0.2.0 - 2020-08-31
+- More useful errors
+- Don't error if text remaining after deserialize is all whitespace
 
 v0.1.0 - 2020-08-31
 - Initial release

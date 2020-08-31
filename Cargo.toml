@@ -1,6 +1,6 @@
 [package]
 name = "vdf-serde"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Melody Horn <melody@boringcactus.com>"]
 edition = "2018"
 description = "Support for the Valve Data Format for Serde"

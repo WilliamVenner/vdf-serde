@@ -38,10 +38,12 @@ impl<'de> Deserializer<'de> {
 pub fn from_str<'a, T>(s: &'a str) -> Result<T> where T: Deserialize<'a> {
     let mut deserializer = Deserializer::from_str(s);
     let t = T::deserialize(&mut deserializer)?;
-    if deserializer.input.is_empty() {
+    // before we toss a LateEOF, let's make sure we're not erroring on some whitespace
+    let remaining_input = deserializer.input.trim_end();
+    if remaining_input.is_empty() {
         Ok(t)
     } else {
-        Err(Error::Parse)
+        Err(Error::LateEOF)
     }
 }
 
@@ -50,10 +52,12 @@ impl<'de> Deserializer<'de> {
         let parsed = vdf_parser::next(self.input.as_bytes());
         match parsed {
             nom::IResult::Done(remainder, token) => {
-                self.input = std::str::from_utf8(remainder).map_err(|_| Error::Parse)?;
+                // since it came from `as_bytes` this is safe
+                self.input = unsafe { std::str::from_utf8_unchecked(remainder) };
                 self.parsed_input.push_back(token);
             }
-            _ => return Err(Error::Parse)
+            nom::IResult::Incomplete(_) => return Err(Error::EarlyEOF),
+            nom::IResult::Error(err) => return Err(Error::Tokenize(err.to_string())),
         }
         Ok(())
     }
@@ -67,23 +71,23 @@ impl<'de> Deserializer<'de> {
 
     fn peek_token(&mut self) -> Result<&Token<'de>> {
         self.parse_more_if_needed()?;
-        self.parsed_input.get(0).ok_or(Error::Parse)
+        self.parsed_input.get(0).ok_or(Error::EarlyEOF)
     }
 
     fn next_token(&mut self) -> Result<Token<'de>> {
         self.parse_more_if_needed()?;
-        self.parsed_input.pop_front().ok_or(Error::Parse)
+        self.parsed_input.pop_front().ok_or(Error::EarlyEOF)
     }
 
     fn next_token_item(&mut self) -> Result<Cow<'de, str>> {
         match self.next_token()? {
             Token::Item(data) => Ok(data),
-            _ => Err(Error::Parse),
+            got => Err(Error::Expected("Item", format!("{:?}", got))),
         }
     }
 
-    fn parse_next_token_data<T: FromStr>(&mut self) -> Result<T> {
-        self.next_token_item()?.parse().map_err(|_| Error::Parse)
+    fn parse_next_token_data<T: FromStr>(&mut self) -> Result<T> where T::Err : std::fmt::Display {
+        self.next_token_item()?.parse().map_err(|err: T::Err| Error::StringParse(err.to_string()))
     }
 }
 
@@ -91,14 +95,14 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
-        Err(Error::Message("can't deserialize whatever you asked for in VDF".to_string()))
+        Err(Error::UnsupportedType("any"))
     }
 
     fn deserialize_bool<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value> {
         match self.next_token()? {
             Token::Item(data) if data == "0" => visitor.visit_bool(false),
             Token::Item(data) if data == "1" => visitor.visit_bool(true),
-            _ => Err(Error::Parse),
+            got => Err(Error::Expected("bool (\"0\" or \"1\")", format!("{:?}", got))),
         }
     }
 
@@ -154,20 +158,52 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         visitor.visit_string(String::from(self.next_token_item()?))
     }
 
+    fn deserialize_bytes<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("byte array"))
+    }
+
+    fn deserialize_byte_buf<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("byte array"))
+    }
+
+    fn deserialize_option<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("option"))
+    }
+
+    fn deserialize_unit<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("unit"))
+    }
+
+    fn deserialize_unit_struct<V: Visitor<'de>>(self, _name: &'static str, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("unit_struct"))
+    }
+
     fn deserialize_newtype_struct<V: Visitor<'de>>(self, _name: &'static str, visitor: V) -> Result<V::Value> {
         visitor.visit_newtype_struct(self)
     }
 
+    fn deserialize_seq<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("seq"))
+    }
+
+    fn deserialize_tuple<V: Visitor<'de>>(self, _len: usize, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("tuple"))
+    }
+
+    fn deserialize_tuple_struct<V: Visitor<'de>>(self, _name: &'static str, _len: usize, _visitor: V) -> Result<V::Value> {
+        Err(Error::UnsupportedType("tuple_struct"))
+    }
+
     fn deserialize_map<V: Visitor<'de>>(mut self, visitor: V) -> Result<V::Value> {
-        if self.next_token()? == Token::GroupStart {
-            let value = visitor.visit_map(TabNewlineSeparated::new(&mut self))?;
-            if self.next_token()? == Token::GroupEnd {
-                Ok(value)
-            } else {
-                Err(Error::Parse)
+        match self.next_token()? {
+            Token::GroupStart => {
+                let value = visitor.visit_map(TabNewlineSeparated::new(&mut self))?;
+                match self.next_token()? {
+                    Token::GroupEnd => Ok(value),
+                    got => Err(Error::Expected("'}'", format!("{:?}", got))),
+                }
             }
-        } else {
-            Err(Error::Parse)
+            got => Err(Error::Expected("'{'", format!("{:?}", got))),
         }
     }
 
@@ -181,7 +217,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             let name_token = self.next_token()?;
             match name_token {
                 Token::Item(name_token) if name_token == name => {},
-                _ => return Err(Error::Parse),
+                got => return Err(Error::Expected(name, format!("{:?}", got))),
             }
             self.top_level = false;
         }
@@ -197,8 +233,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     }
 
     serde::forward_to_deserialize_any! {
-        bytes byte_buf option unit unit_struct seq tuple
-        tuple_struct ignored_any
+        ignored_any
     }
 }
 

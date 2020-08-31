@@ -102,7 +102,7 @@
 //! # Ok::<(), vdf_serde::Error>(())
 //! ```
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/vdf-serde/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/vdf-serde/0.2.0")]
 
 mod de;
 mod error;

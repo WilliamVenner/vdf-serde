@@ -14,8 +14,24 @@ pub enum Error {
     /// An error carried up from the specific Serialize/Deserialize implementation
     Message(String),
 
-    /// A syntax error in deserializing (vague because I am lazy)
-    Parse,
+    /// Unsupported Serde data type
+    UnsupportedType(&'static str),
+
+    /// EOF too early
+    EarlyEOF,
+
+    /// EOF too late
+    LateEOF,
+
+    /// Tokenization error
+    /// (This could be a nom::Err but I don't want ancient nom in my type signature)
+    Tokenize(String),
+
+    /// A mismatch between an expected token and a real token
+    Expected(&'static str, String),
+
+    /// Failed to parse from a string to some other type
+    StringParse(String)
 }
 
 impl ser::Error for Error {
@@ -34,7 +50,12 @@ impl Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Message(msg) => formatter.write_str(msg),
-            Error::Parse => formatter.write_str("parse error"),
+            Error::UnsupportedType(r#type) => write!(formatter, "unsupported Serde data type {} used", r#type),
+            Error::EarlyEOF => formatter.write_str("input ended early"),
+            Error::LateEOF => formatter.write_str("input ended late"),
+            Error::Tokenize(err) => formatter.write_str(err),
+            Error::Expected(wanted, got) => write!(formatter, "expected {}, got {}", wanted, got),
+            Error::StringParse(err) => formatter.write_str(err),
         }
     }
 }

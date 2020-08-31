@@ -116,26 +116,26 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_bytes(self, _v: &[u8]) -> Result<()> {
-        Err(Error::Message("can't serialize arrays in VDF".to_string()))
+        Err(Error::UnsupportedType("byte array"))
     }
 
     fn serialize_none(self) -> Result<()> {
-        Err(Error::Message("can't serialize None in VDF".to_string()))
+        Err(Error::UnsupportedType("option"))
     }
 
-    fn serialize_some<T>(self, value: &T) -> Result<()>
+    fn serialize_some<T>(self, _value: &T) -> Result<()>
         where
             T: ?Sized + Serialize,
     {
-        value.serialize(self)
+        Err(Error::UnsupportedType("option"))
     }
 
     fn serialize_unit(self) -> Result<()> {
-        Err(Error::Message("can't serialize () in VDF".to_string()))
+        Err(Error::UnsupportedType("unit"))
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        self.serialize_unit()
+        Err(Error::UnsupportedType("unit_struct"))
     }
 
     fn serialize_unit_variant(
@@ -168,15 +168,15 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         where
             T: ?Sized + Serialize,
     {
-        Err(Error::Message("can't serialize newtype variant in VDF".to_string()))
+        Err(Error::UnsupportedType("newtype_variant"))
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
-        Err(Error::Message("can't serialize arrays in VDF".to_string()))
+        Err(Error::UnsupportedType("seq"))
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        Err(Error::Message("can't serialize tuples in VDF".to_string()))
+        Err(Error::UnsupportedType("tuple"))
     }
 
     fn serialize_tuple_struct(
@@ -184,7 +184,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        Err(Error::Message("can't serialize tuples in VDF".to_string()))
+        Err(Error::UnsupportedType("tuple_struct"))
     }
 
     fn serialize_tuple_variant(
@@ -194,7 +194,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        Err(Error::Message("can't serialize tuples in VDF".to_string()))
+        Err(Error::UnsupportedType("tuple_variant"))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
@@ -226,7 +226,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        Err(Error::Message("can't serialize struct variants in VDF".to_string()))
+        Err(Error::UnsupportedType("struct_variant"))
     }
 
     fn collect_str<T: ?Sized>(self, value: &T) -> Result<()> where
