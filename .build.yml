@@ -1,0 +1,10 @@
+image: alpine/latest
+packages:
+  - rust
+  - cargo
+sources:
+  - https://git.sr.ht/~boringcactus/vdf-serde
+tasks:
+  - test: |
+      cd vdf-serde
+      cargo test
