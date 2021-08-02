@@ -104,13 +104,15 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
-        let escaped = v
+        #[cfg(feature = "escape")]
+        let v = v
             .replace('\\', r"\\")
             .replace('\n', r"\n")
             .replace('\t', r"\t")
             .replace('"', r#"\""#);
+        
         self.output += "\"";
-        self.output += &escaped;
+        self.output += &v;
         self.output += "\"";
         Ok(())
     }

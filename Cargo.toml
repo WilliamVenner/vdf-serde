@@ -21,3 +21,7 @@ nom = "^1.2" # don't @ me, steamy-vdf uses it
 
 [dev-dependencies]
 version-sync = "0.9.1"
+
+[features]
+default = ["escape"]
+escape = []
