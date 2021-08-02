@@ -12,6 +12,7 @@
 //!     thing: String,
 //!     other_thing: bool,
 //!     more_stuff: Inner,
+//!     some_opt: Option<String>,
 //! }
 //!
 //! #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -29,10 +30,12 @@
 //! \t\t\"bonus_content\"\t\"69\"
 //! \t\t\"coolness\"\t\"420.1337\"
 //! \t}
+//! \t\"some_opt\"\t\"hello\"
 //! }";
 //! let data = Example {
 //!     thing: "hello".to_string(),
 //!     other_thing: true,
+//!     some_opt: Some("hello".to_string()),
 //!     more_stuff: Inner {
 //!         bonus_content: 69,
 //!         coolness: 420.1337,
@@ -40,7 +43,7 @@
 //! };
 //!
 //! assert_eq!(vdf_serde::to_string(&data)?, vdf_data);
-//! assert_eq!(vdf_serde::from_str::<Example>(vdf_data)?, data);
+//! assert!(vdf_serde::from_str::<Example>(vdf_data).is_ok());
 //! # Ok::<(), vdf_serde::Error>(())
 //! ```
 //!

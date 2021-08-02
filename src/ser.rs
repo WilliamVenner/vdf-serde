@@ -123,11 +123,11 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         Err(Error::UnsupportedType("option"))
     }
 
-    fn serialize_some<T>(self, _value: &T) -> Result<()>
+    fn serialize_some<T>(self, value: &T) -> Result<()>
         where
             T: ?Sized + Serialize,
     {
-        Err(Error::UnsupportedType("option"))
+        value.serialize(self)
     }
 
     fn serialize_unit(self) -> Result<()> {

@@ -166,8 +166,8 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         Err(Error::UnsupportedType("byte array"))
     }
 
-    fn deserialize_option<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
-        Err(Error::UnsupportedType("option"))
+    fn deserialize_option<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value> {
+        visitor.visit_some(self)
     }
 
     fn deserialize_unit<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value> {
